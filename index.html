@@ -1,0 +1,1936 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registrador de Horas - Clockify</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 30px;
+            text-align: center;
+            font-size: 2em;
+        }
+
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+        }
+
+        .section h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 1.3em;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: #555;
+            font-weight: 600;
+        }
+
+        input[type="number"],
+        input[type="text"],
+        input[type="date"],
+        select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus,
+        select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        select {
+            cursor: pointer;
+            background-color: white;
+        }
+
+        .task-entry,
+        .meeting-entry {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 2px solid #e0e0e0;
+        }
+
+        .task-entry input,
+        .meeting-entry input {
+            margin-bottom: 10px;
+        }
+
+        .meeting-entry {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        .meeting-entry .input-group {
+            margin-bottom: 0;
+        }
+
+        .meeting-entry button {
+            margin: 0;
+            height: 46px;
+        }
+
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-right: 10px;
+            margin-top: 10px;
+        }
+
+        button:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button.add-task {
+            background: #28a745;
+        }
+
+        button.add-task:hover {
+            background: #218838;
+        }
+
+        button.remove-task {
+            background: #dc3545;
+            padding: 8px 15px;
+            font-size: 14px;
+        }
+
+        button.remove-task:hover {
+            background: #c82333;
+        }
+
+        button.clear-cache {
+            background: #6c757d;
+            padding: 8px 15px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        button.clear-cache:hover {
+            background: #5a6268;
+        }
+
+        .cache-indicator {
+            display: inline-block;
+            background: #28a745;
+            color: white;
+            padding: 4px 10px;
+            border-radius: 5px;
+            font-size: 12px;
+            margin-left: 10px;
+        }
+
+        #schedule {
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            display: none;
+        }
+
+        .schedule-item {
+            background: white;
+            padding: 15px;
+            margin-bottom: 10px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .schedule-time {
+            font-weight: bold;
+            color: #667eea;
+            font-size: 1.1em;
+        }
+
+        .schedule-description {
+            color: #555;
+            flex-grow: 1;
+            margin-left: 20px;
+        }
+
+        .schedule-duration {
+            color: #888;
+            font-size: 0.9em;
+        }
+
+        #loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .error {
+            background: #f8d7da;
+            color: #721c24;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #f5c6cb;
+        }
+
+        .success {
+            background: #d4edda;
+            color: #155724;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+            border: 1px solid #c3e6cb;
+        }
+
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            border: 1px solid #bee5eb;
+        }
+
+        .hours-counter {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            text-align: center;
+            border: 3px solid #ddd;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .hours-counter h3 {
+            margin-bottom: 15px;
+            color: #333;
+            font-size: 1.2em;
+        }
+
+        .hours-display {
+            font-size: 3em;
+            font-weight: bold;
+            margin: 10px 0;
+            transition: color 0.3s;
+        }
+
+        .hours-counter.exact {
+            border-color: #28a745;
+            background: #d4edda;
+        }
+
+        .hours-counter.exact .hours-display {
+            color: #28a745;
+        }
+
+        .hours-counter.less {
+            border-color: #ffc107;
+            background: #fff3cd;
+        }
+
+        .hours-counter.less .hours-display {
+            color: #ffc107;
+        }
+
+        .hours-counter.more {
+            border-color: #dc3545;
+            background: #f8d7da;
+        }
+
+        .hours-counter.more .hours-display {
+            color: #dc3545;
+        }
+
+        .hours-message {
+            font-size: 1.1em;
+            margin-top: 10px;
+            font-weight: 600;
+        }
+
+        .hours-breakdown {
+            margin-top: 15px;
+            font-size: 0.9em;
+            color: #666;
+        }
+
+        .task-suggestions {
+            position: absolute;
+            background: white;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            width: 100%;
+            margin-top: 2px;
+        }
+
+        .task-suggestion-item {
+            padding: 12px 15px;
+            cursor: pointer;
+            transition: background 0.2s;
+            border-bottom: 1px solid #f0f0f0;
+        }
+
+        .task-suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .task-suggestion-item:hover {
+            background: #f0f0ff;
+        }
+
+        .task-suggestion-item:active {
+            background: #667eea;
+            color: white;
+        }
+
+        .task-suggestion-empty {
+            padding: 12px 15px;
+            color: #999;
+            font-style: italic;
+            text-align: center;
+        }
+
+        .input-group {
+            position: relative;
+        }
+
+        /* Modal de configuración */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 10000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            animation: fadeIn 0.3s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 40px;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s;
+        }
+
+        @keyframes slideDown {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            margin-bottom: 30px;
+            text-align: center;
+        }
+
+        .modal-header h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 10px;
+        }
+
+        .modal-header p {
+            color: #666;
+            font-size: 1em;
+        }
+
+        .modal-input-group {
+            margin-bottom: 25px;
+        }
+
+        .modal-input-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #333;
+            font-weight: 600;
+            font-size: 1em;
+        }
+
+        .modal-input-group input,
+        .modal-input-group select {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+        }
+
+        .modal-input-group input:focus,
+        .modal-input-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-input-group small {
+            display: block;
+            margin-top: 5px;
+            color: #888;
+            font-size: 0.85em;
+        }
+
+        .modal-buttons {
+            display: flex;
+            gap: 10px;
+            margin-top: 30px;
+        }
+
+        .modal-buttons button {
+            flex: 1;
+            padding: 15px;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .btn-settings {
+            background: #6c757d;
+            padding: 10px 20px;
+            font-size: 14px;
+            margin-left: 10px;
+        }
+
+        .btn-settings:hover {
+            background: #5a6268;
+        }
+
+        .config-link {
+            text-align: center;
+            margin-top: 20px;
+        }
+
+        .config-link a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .config-link a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
+            <h1 class="lang" data-en="📊 Clockify Time Tracker" data-es="📊 Registrador de Horas - Clockify" style="margin: 0;">📊 Clockify Time Tracker</h1>
+            <select id="languageSelector" style="padding: 8px 15px; font-size: 14px; width: auto;">
+                <option value="en">🇺🇸 English</option>
+                <option value="es">🇪🇸 Español</option>
+            </select>
+        </div>
+        
+        <div class="info">
+            <strong class="lang" data-en="Instructions:" data-es="Instrucciones:">Instructions:</strong> 
+            <span class="lang" data-en="Enter your meetings and tasks duration. The system will automatically distribute hours throughout your workday and upload them to Clockify." data-es="Ingresa la duración de tus reuniones y tareas. El sistema distribuirá automáticamente las horas a lo largo del día laboral y las subirá a Clockify.">Enter your meetings and tasks duration. The system will automatically distribute hours throughout your workday and upload them to Clockify.</span>
+        </div>
+
+        <div class="section">
+            <h2 class="lang" data-en="📅 Day Configuration" data-es="📅 Configuración del Día">📅 Day Configuration</h2>
+            <div class="input-group">
+                <label for="workDate" class="lang" data-en="Work date:" data-es="Fecha de trabajo:">Work date:</label>
+                <input type="date" id="workDate" required>
+            </div>
+            <div class="input-group">
+                <label for="workStartTime" class="lang" data-en="Work start time (HH:MM):" data-es="Hora de inicio de jornada (HH:MM):">Work start time (HH:MM):</label>
+                <input type="text" id="workStartTime" value="09:00" placeholder="09:00" required>
+            </div>
+            <div class="input-group">
+                <label for="projectSelect" class="lang" data-en="Clockify Project:" data-es="Proyecto en Clockify:">Clockify Project:</label>
+                <select id="projectSelect" required>
+                    <option value="" class="lang" data-en="Loading projects..." data-es="Cargando proyectos...">Loading projects...</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2 class="lang" data-en="🕘 Scheduled Meetings" data-es="🕘 Reuniones Programadas">🕘 Scheduled Meetings</h2>
+            <div id="meetingsContainer">
+                <div class="meeting-entry">
+                    <div class="input-group">
+                        <label class="lang" data-en="Meeting name:" data-es="Nombre de la reunión:">Meeting name:</label>
+                        <input type="text" class="meeting-name" placeholder="Daily" required>
+                    </div>
+                    <div class="input-group">
+                        <label class="lang" data-en="Start time (HH:MM):" data-es="Hora de inicio (HH:MM):">Start time (HH:MM):</label>
+                        <input type="text" class="meeting-time" placeholder="09:30" required pattern="[0-9]{1,2}:[0-9]{2}">
+                    </div>
+                    <div class="input-group">
+                        <label class="lang" data-en="Duration (HH:MM):" data-es="Duración (HH:MM):">Duration (HH:MM):</label>
+                        <input type="text" class="meeting-duration" placeholder="00:15" required pattern="[0-9]{1,2}:[0-9]{2}">
+                    </div>
+                </div>
+            </div>
+            <button class="add-task lang" onclick="addMeeting()" data-en="➕ Add Meeting" data-es="➕ Agregar Reunión">➕ Add Meeting</button>
+        </div>
+
+        <div class="section">
+            <h2><span class="lang" data-en="⚙️ Other Tasks" data-es="⚙️ Otras Tareas">⚙️ Other Tasks</span> <span id="cacheIndicator" class="cache-indicator" style="display: none;">💾 <span class="lang" data-en="Saved" data-es="Guardado">Saved</span></span></h2>
+            <div id="tasksContainer">
+                <div class="task-entry">
+                    <div class="input-group">
+                        <label class="lang" data-en="Task description:" data-es="Descripción de la tarea:">Task description:</label>
+                        <input type="text" class="task-description" placeholder="Ex: API Development" required>
+                    </div>
+                    <div class="input-group">
+                        <label class="lang" data-en="Duration (HH:MM):" data-es="Duración (HH:MM):">Duration (HH:MM):</label>
+                        <input type="text" class="task-duration" placeholder="07:15" required pattern="[0-9]{1,2}:[0-9]{2}">
+                    </div>
+                </div>
+            </div>
+            <button class="add-task lang" onclick="addTask()" data-en="➕ Add Another Task" data-es="➕ Agregar Otra Tarea">➕ Add Another Task</button>
+            <button class="clear-cache lang" onclick="clearCacheAndReload()" data-en="🗑️ Clear Cache" data-es="🗑️ Limpiar Caché">🗑️ Clear Cache</button>
+        </div>
+
+        <div id="hoursCounter" class="hours-counter">
+            <h3 class="lang" data-en="⏱️ Total Work Hours" data-es="⏱️ Total de Horas de Trabajo">⏱️ Total Work Hours</h3>
+            <div class="hours-display" id="hoursDisplay">0:00</div>
+            <div class="hours-message" id="hoursMessage"><span class="lang" data-en="Goal: 8 hours" data-es="Objetivo: 8 horas">Goal: 8 hours</span></div>
+            <div class="hours-breakdown" id="hoursBreakdown"></div>
+        </div>
+
+        <button class="lang" onclick="generateSchedule()" data-en="🚀 Generate Schedule and Upload to Clockify" data-es="🚀 Generar Horario y Subir a Clockify">🚀 Generate Schedule and Upload to Clockify</button>
+
+        <div id="loading">
+            <div class="spinner"></div>
+            <p style="margin-top: 15px;" class="lang" data-en="Processing..." data-es="Procesando...">Processing...</p>
+        </div>
+
+        <div id="result"></div>
+
+        <div id="schedule">
+            <h2 class="lang" data-en="📋 Generated Schedule" data-es="📋 Horario Generado">📋 Generated Schedule</h2>
+            <div id="scheduleItems"></div>
+        </div>
+
+        <div class="config-link">
+            <a onclick="openConfigModal()" class="lang" data-en="🔧 Change API Configuration" data-es="🔧 Cambiar configuración de API">🔧 Change API Configuration</a>
+        </div>
+    </div>
+
+    <!-- Modal de Configuración -->
+    <div id="configModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 class="lang" data-en="⚙️ Clockify Configuration" data-es="⚙️ Configuración de Clockify">⚙️ Clockify Configuration</h2>
+                <p class="lang" data-en="Enter your API Key and select your default project" data-es="Ingresa tu API Key y selecciona tu proyecto por defecto">Enter your API Key and select your default project</p>
+            </div>
+            
+            <div class="modal-input-group">
+                <label for="apiKeyInput" class="lang" data-en="🔑 Clockify API Key" data-es="🔑 API Key de Clockify">🔑 Clockify API Key</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="password" id="apiKeyInput" placeholder="Enter your API Key" required style="flex: 1;" class="lang-placeholder" data-en="Enter your API Key" data-es="Ingresa tu API Key">
+                    <button type="button" onclick="toggleApiKeyVisibility()" style="padding: 12px 20px; background: #6c757d;">👁️</button>
+                </div>
+                <small><span class="lang" data-en="You can get it at:" data-es="Puedes obtenerla en:">You can get it at:</span> <a href="https://app.clockify.me/manage-api-keys" target="_blank" style="color: #667eea;">Clockify Preferences → Advanced → API</a></small>
+            </div>
+
+            <div class="modal-input-group">
+                <label for="defaultProjectInput" class="lang" data-en="📁 Default Project ID (optional)" data-es="📁 ID del Proyecto por Defecto (opcional)">📁 Default Project ID (optional)</label>
+                <input type="text" id="defaultProjectInput" placeholder="Ex: 67f8001c11a7e1727367c4c3" class="lang-placeholder" data-en="Ex: 67f8001c11a7e1727367c4c3" data-es="Ej: 67f8001c11a7e1727367c4c3">
+                <small class="lang" data-en="The project ID you want to use by default. You can change it later." data-es="El ID del proyecto que quieres usar por defecto. Puedes cambiarlo después.">The project ID you want to use by default. You can change it later.</small>
+            </div>
+
+            <div class="modal-buttons">
+                <button onclick="saveConfig()" class="lang" data-en="💾 Save Configuration" data-es="💾 Guardar Configuración">💾 Save Configuration</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE_URL = 'https://api.clockify.me/api/v1';
+        const MAX_TASK_HISTORY = 10;
+        const MAX_MEETING_HISTORY = 10;
+
+        let workspaceId = null;
+        let userId = null;
+        let selectedProjectId = null;
+        let currentLanguage = 'en';
+
+        // Sistema de internacionalización
+        const translations = {
+            en: {
+                removeButton: '❌ Remove',
+                noRecentTasks: 'No recent tasks',
+                noMatches: 'No matches',
+                noRecentMeetings: 'No recent meetings',
+                selectProject: '-- Select a project --',
+                loadingProjects: 'Loading projects...',
+                errorLoadingProjects: 'Error loading projects',
+                lunch: '🍽️ Lunch',
+                meetings: 'Meetings',
+                tasks: 'Tasks',
+                goal8hours: 'Goal: 8 hours',
+                perfect8hours: '✅ Perfect! Exactly 8 hours',
+                missing: '⚠️ Missing',
+                toComplete8hours: 'to complete 8 hours',
+                youHave: '⚠️ You have',
+                extra: 'extra',
+                total: 'total',
+                atLeastOneMeeting: '⚠️ There must be at least one scheduled meeting',
+                areYouSure: 'Are you sure you want to clear all saved data?',
+                confirmWarning: '⚠️ WARNING: You have',
+                hoursRegistered: 'hours registered.',
+                missing2: 'Missing',
+                continueAnyway: '\n\nDo you want to continue anyway?',
+                selectDate: 'Please select a work date.',
+                selectProject2: 'Please select a Clockify project.',
+                completeFields: 'Please complete all task descriptions and durations.',
+                configSaved: '✅ Configuration saved successfully',
+                invalidApiKey: '❌ Error: The API Key is invalid. Please verify and try again.',
+                enterApiKey: '⚠️ Please enter your Clockify API Key',
+                successEntries: '✅ Success! ',
+                timeEntriesCreated: ' time entries have been created in Clockify.',
+                date: 'Date:',
+                viewInClockify: 'View in Clockify'
+            },
+            es: {
+                removeButton: '❌ Eliminar',
+                noRecentTasks: 'No hay tareas recientes',
+                noMatches: '${translate('noMatches')}',
+                noRecentMeetings: '${translate('noRecentMeetings')}',
+                selectProject: '-- Selecciona un proyecto --',
+                loadingProjects: 'Cargando proyectos...',
+                errorLoadingProjects: 'Error al cargar proyectos',
+                lunch: '🍽️ Almuerzo',
+                meetings: 'Reuniones',
+                tasks: 'Tareas',
+                goal8hours: 'Objetivo: 8 horas',
+                perfect8hours: '✅ ¡Perfecto! 8 horas exactas',
+                missing: '⚠️ Faltan',
+                toComplete8hours: 'para completar 8 horas',
+                youHave: '⚠️ Tienes',
+                extra: 'de más',
+                total: 'total',
+                atLeastOneMeeting: '⚠️ Debe haber al menos una reunión programada',
+                areYouSure: '¿Estás seguro de que quieres limpiar todos los datos guardados?',
+                confirmWarning: '⚠️ ADVERTENCIA: Tienes',
+                hoursRegistered: 'horas registradas.',
+                missing2: 'Faltan',
+                continueAnyway: '\n\n¿Deseas continuar de todas formas?',
+                selectDate: 'Por favor selecciona una fecha de trabajo.',
+                selectProject2: 'Por favor selecciona un proyecto de Clockify.',
+                completeFields: 'Por favor completa todas las descripciones y duraciones de las tareas.',
+                configSaved: '✅ Configuración guardada correctamente',
+                invalidApiKey: '❌ Error: La API Key no es válida. Por favor verifica e intenta nuevamente.',
+                enterApiKey: '⚠️ Por favor ingresa tu API Key de Clockify',
+                successEntries: '✅ ¡Éxito! Se han creado ',
+                timeEntriesCreated: ' entradas de tiempo en Clockify.',
+                date: 'Fecha:',
+                viewInClockify: 'Ver en Clockify'
+            }
+        };
+
+        function translate(key) {
+            return translations[currentLanguage][key] || translations['en'][key] || key;
+        }
+
+        function changeLanguage(lang) {
+            currentLanguage = lang;
+            localStorage.setItem('clockifyLanguage', lang);
+            
+            // Actualizar todos los elementos con clase 'lang'
+            document.querySelectorAll('.lang').forEach(element => {
+                const text = element.getAttribute(`data-${lang}`);
+                if (text) {
+                    element.textContent = text;
+                }
+            });
+
+            // Actualizar placeholders
+            document.querySelectorAll('.lang-placeholder').forEach(element => {
+                const placeholder = element.getAttribute(`data-${lang}`);
+                if (placeholder) {
+                    element.placeholder = placeholder;
+                }
+            });
+
+            // Actualizar select de idioma
+            document.getElementById('languageSelector').value = lang;
+            
+            // Actualizar contador de horas
+            updateHoursCounter();
+        }
+
+        // Cargar idioma guardado o detectar del navegador
+        function loadLanguage() {
+            const savedLang = localStorage.getItem('clockifyLanguage');
+            if (savedLang) {
+                changeLanguage(savedLang);
+            } else {
+                // Detectar idioma del navegador
+                const browserLang = navigator.language || navigator.userLanguage;
+                const lang = browserLang.startsWith('es') ? 'es' : 'en';
+                changeLanguage(lang);
+            }
+        }
+
+        // Event listener para cambio de idioma
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('languageSelector').addEventListener('change', (e) => {
+                changeLanguage(e.target.value);
+            });
+            loadLanguage();
+        });
+
+        // Funciones de gestión de configuración
+        function getConfig() {
+            const config = localStorage.getItem('clockifyConfig');
+            return config ? JSON.parse(config) : null;
+        }
+
+        function saveConfigToStorage(apiKey, defaultProjectId) {
+            const config = {
+                apiKey: apiKey,
+                defaultProjectId: defaultProjectId || null
+            };
+            localStorage.setItem('clockifyConfig', JSON.stringify(config));
+        }
+
+        function getApiKey() {
+            const config = getConfig();
+            return config ? config.apiKey : null;
+        }
+
+        function getDefaultProjectId() {
+            const config = getConfig();
+            return config ? config.defaultProjectId : null;
+        }
+
+        // Modal de configuración
+        function openConfigModal() {
+            const modal = document.getElementById('configModal');
+            const config = getConfig();
+            
+            if (config) {
+                document.getElementById('apiKeyInput').value = config.apiKey || '';
+                document.getElementById('defaultProjectInput').value = config.defaultProjectId || '';
+            }
+            
+            modal.style.display = 'block';
+        }
+
+        function closeConfigModal() {
+            document.getElementById('configModal').style.display = 'none';
+        }
+
+        async function saveConfig() {
+            const apiKey = document.getElementById('apiKeyInput').value.trim();
+            const defaultProjectId = document.getElementById('defaultProjectInput').value.trim();
+
+            if (!apiKey) {
+                alert(translate('enterApiKey'));
+                return;
+            }
+
+            // Validar la API Key
+            try {
+                const response = await fetch(`${API_BASE_URL}/user`, {
+                    headers: { 'X-Api-Key': apiKey }
+                });
+
+                if (!response.ok) {
+                    throw new Error('API Key inválida');
+                }
+
+                // Guardar configuración
+                saveConfigToStorage(apiKey, defaultProjectId);
+                closeConfigModal();
+                
+                alert(translate('configSaved'));
+                
+                // Recargar para aplicar cambios
+                location.reload();
+            } catch (error) {
+                alert(translate('invalidApiKey'));
+                console.error('Error validando API Key:', error);
+            }
+        }
+
+        // Verificar configuración al cargar
+        function checkConfig() {
+            const config = getConfig();
+            if (!config || !config.apiKey) {
+                openConfigModal();
+                return false;
+            }
+            return true;
+        }
+
+        // Mostrar/Ocultar API Key
+        function toggleApiKeyVisibility() {
+            const input = document.getElementById('apiKeyInput');
+            if (input.type === 'password') {
+                input.type = 'text';
+            } else {
+                input.type = 'password';
+            }
+        }
+
+        // Cerrar modal al hacer clic fuera (solo si ya hay configuración)
+        window.onclick = function(event) {
+            const modal = document.getElementById('configModal');
+            if (event.target === modal && getConfig()) {
+                closeConfigModal();
+            }
+        }
+
+        // Establecer la fecha de hoy por defecto
+        document.getElementById('workDate').valueAsDate = new Date();
+
+        // Cargar proyectos al iniciar
+        window.addEventListener('DOMContentLoaded', async () => {
+            // Verificar configuración primero
+            if (!checkConfig()) {
+                return; // Esperar a que el usuario configure
+            }
+
+            try {
+                await getUserInfo();
+                await loadProjects();
+                loadCachedData();
+            } catch (error) {
+                console.error('Error al inicializar:', error);
+                document.getElementById('projectSelect').innerHTML = '<option value="">Error al cargar proyectos</option>';
+                
+                // Si el error es por API Key inválida, abrir modal de configuración
+                if (error.message && error.message.includes('API')) {
+                    alert('❌ Error con tu API Key. Por favor reconfigura.');
+                    openConfigModal();
+                }
+            }
+        });
+
+        // Guardar datos en caché
+        function saveToCache() {
+            const tasks = [];
+            document.querySelectorAll('.task-entry').forEach(entry => {
+                const description = entry.querySelector('.task-description').value;
+                const duration = entry.querySelector('.task-duration').value;
+                if (description || duration) {
+                    tasks.push({ description, duration });
+                }
+            });
+
+            const meetings = [];
+            document.querySelectorAll('.meeting-entry').forEach(entry => {
+                const name = entry.querySelector('.meeting-name').value;
+                const time = entry.querySelector('.meeting-time').value;
+                const duration = entry.querySelector('.meeting-duration').value;
+                if (name || time || duration) {
+                    meetings.push({ name, time, duration });
+                }
+            });
+
+            const cacheData = {
+                workStartTime: document.getElementById('workStartTime').value,
+                meetings: meetings,
+                tasks: tasks
+            };
+
+            localStorage.setItem('clockifyCache', JSON.stringify(cacheData));
+            
+            // Mostrar indicador de guardado
+            showCacheIndicator();
+        }
+
+        // Mostrar indicador de caché guardado
+        function showCacheIndicator() {
+            const indicator = document.getElementById('cacheIndicator');
+            if (indicator) {
+                indicator.style.display = 'inline-block';
+                setTimeout(() => {
+                    indicator.style.display = 'none';
+                }, 2000);
+            }
+        }
+
+        // Cargar datos desde caché
+        function loadCachedData() {
+            const cached = localStorage.getItem('clockifyCache');
+            if (cached) {
+                try {
+                    const data = JSON.parse(cached);
+                    
+                    // Restaurar hora de inicio
+                    if (data.workStartTime) {
+                        document.getElementById('workStartTime').value = data.workStartTime;
+                    }
+
+                    // Restaurar reuniones
+                    if (data.meetings && data.meetings.length > 0) {
+                        const meetingsContainer = document.getElementById('meetingsContainer');
+                        meetingsContainer.innerHTML = ''; // Limpiar reuniones por defecto
+                        
+                        data.meetings.forEach(meeting => {
+                            const meetingEntry = document.createElement('div');
+                            meetingEntry.className = 'meeting-entry';
+                            // Si la duración está en formato antiguo, convertir a HH:MM
+                            let durationValue = meeting.duration || '';
+                            if (durationValue && !durationValue.includes(':')) {
+                                durationValue = minutesToDuration(parseInt(durationValue));
+                            }
+                            let timeValue = meeting.time || '';
+                            const hasRemoveButton = data.meetings.length > 1;
+                            
+                            meetingEntry.innerHTML = `
+                                <div class="input-group">
+                                    <label class="lang" data-en="Meeting name:" data-es="Nombre de la reunión:">Meeting name:</label>
+                                    <input type="text" class="meeting-name" placeholder="Daily Standup" value="${meeting.name || ''}" required>
+                                </div>
+                                <div class="input-group">
+                                    <label class="lang" data-en="Start time (HH:MM):" data-es="Hora de inicio (HH:MM):">Start time (HH:MM):</label>
+                                    <input type="text" class="meeting-time" placeholder="09:30" value="${timeValue}" required pattern="[0-9]{1,2}:[0-9]{2}">
+                                </div>
+                                <div class="input-group">
+                                    <label class="lang" data-en="Duration (HH:MM):" data-es="Duración (HH:MM):">Duration (HH:MM):</label>
+                                    <input type="text" class="meeting-duration" placeholder="00:15" value="${durationValue}" required pattern="[0-9]{1,2}:[0-9]{2}">
+                                </div>
+                                ${hasRemoveButton ? `<button class="remove-task" onclick="removeMeeting(this)">${translate('removeButton')}</button>` : ''}
+                            `;
+                            meetingsContainer.appendChild(meetingEntry);
+                            // Agregar eventos
+                            attachMeetingEvents(meetingEntry);
+                        });
+                        
+                        // Actualizar contador después de cargar reuniones
+                        setTimeout(updateHoursCounter, 100);
+                    }
+
+                    // Restaurar tareas
+                    if (data.tasks && data.tasks.length > 0) {
+                        const tasksContainer = document.getElementById('tasksContainer');
+                        tasksContainer.innerHTML = ''; // Limpiar tareas por defecto
+                        
+                        data.tasks.forEach(task => {
+                            const taskEntry = document.createElement('div');
+                            taskEntry.className = 'task-entry';
+                            // Si la duración está en minutos (formato antiguo), convertir a HH:MM
+                            let durationValue = task.duration || '';
+                            if (durationValue && !durationValue.includes(':')) {
+                                // Es formato antiguo (solo minutos), convertir
+                                durationValue = minutesToDuration(parseInt(durationValue));
+                            }
+                            taskEntry.innerHTML = `
+                                <div class="input-group">
+                                    <label class="lang" data-en="Task description:" data-es="Descripción de la tarea:">Task description:</label>
+                                    <input type="text" class="task-description" placeholder="Ex: API Development" value="${task.description || ''}" required>
+                                </div>
+                                <div class="input-group">
+                                    <label class="lang" data-en="Duration (HH:MM):" data-es="Duración (HH:MM):">Duration (HH:MM):</label>
+                                    <input type="text" class="task-duration" placeholder="07:15" value="${durationValue}" required pattern="[0-9]{1,2}:[0-9]{2}">
+                                </div>
+                                <button class="remove-task" onclick="removeTask(this)">${translate('removeButton')}</button>
+                            `;
+                            tasksContainer.appendChild(taskEntry);
+                            // Agregar eventos para guardar en caché
+                            attachCacheEvents(taskEntry);
+                            // Agregar eventos de sugerencias al input de descripción
+                            const descriptionInput = taskEntry.querySelector('.task-description');
+                            attachTaskDescriptionEvents(descriptionInput);
+                        });
+                        
+                        // Actualizar contador después de cargar tareas
+                        setTimeout(updateHoursCounter, 100);
+                    }
+                } catch (error) {
+                    console.error('Error al cargar caché:', error);
+                }
+            }
+        }
+
+        // Limpiar caché
+        function clearCache() {
+            localStorage.removeItem('clockifyCache');
+        }
+
+        // Limpiar caché y recargar página
+        function clearCacheAndReload() {
+            if (confirm(translate('areYouSure'))) {
+                clearCache();
+                clearTaskHistory();
+                clearMeetingHistory();
+                location.reload();
+            }
+        }
+
+        // Gestión del historial de descripciones de tareas
+        function getTaskHistory() {
+            const history = localStorage.getItem('clockifyTaskHistory');
+            return history ? JSON.parse(history) : [];
+        }
+
+        function saveTaskHistory(history) {
+            localStorage.setItem('clockifyTaskHistory', JSON.stringify(history));
+        }
+
+        function addToTaskHistory(description) {
+            if (!description || description.trim() === '') return;
+            
+            let history = getTaskHistory();
+            
+            // Eliminar si ya existe (para moverlo al principio)
+            history = history.filter(item => item.toLowerCase() !== description.toLowerCase());
+            
+            // Agregar al principio
+            history.unshift(description.trim());
+            
+            // Mantener solo las últimas 10
+            if (history.length > MAX_TASK_HISTORY) {
+                history = history.slice(0, MAX_TASK_HISTORY);
+            }
+            
+            saveTaskHistory(history);
+        }
+
+        function clearTaskHistory() {
+            localStorage.removeItem('clockifyTaskHistory');
+        }
+
+        // Gestión del historial de nombres de reuniones
+        function getMeetingHistory() {
+            const history = localStorage.getItem('clockifyMeetingHistory');
+            return history ? JSON.parse(history) : [];
+        }
+
+        function saveMeetingHistory(history) {
+            localStorage.setItem('clockifyMeetingHistory', JSON.stringify(history));
+        }
+
+        function addToMeetingHistory(name) {
+            if (!name || name.trim() === '') return;
+            
+            let history = getMeetingHistory();
+            
+            // Eliminar si ya existe (para moverlo al principio)
+            history = history.filter(item => item.toLowerCase() !== name.toLowerCase());
+            
+            // Agregar al principio
+            history.unshift(name.trim());
+            
+            // Mantener solo las últimas 10
+            if (history.length > MAX_MEETING_HISTORY) {
+                history = history.slice(0, MAX_MEETING_HISTORY);
+            }
+            
+            saveMeetingHistory(history);
+        }
+
+        function clearMeetingHistory() {
+            localStorage.removeItem('clockifyMeetingHistory');
+        }
+
+        // Mostrar sugerencias de reuniones
+        function showMeetingSuggestions(input) {
+            // Cerrar otros dropdowns abiertos
+            document.querySelectorAll('.task-suggestions').forEach(dropdown => {
+                dropdown.style.display = 'none';
+            });
+
+            let dropdown = input.parentElement.querySelector('.task-suggestions');
+            
+            if (!dropdown) {
+                dropdown = document.createElement('div');
+                dropdown.className = 'task-suggestions';
+                input.parentElement.appendChild(dropdown);
+            }
+
+            const history = getMeetingHistory();
+            
+            if (history.length === 0) {
+                dropdown.innerHTML = '<div class="task-suggestion-empty">${translate('noRecentMeetings')}</div>';
+            } else {
+                dropdown.innerHTML = history.map(meeting => 
+                    `<div class="task-suggestion-item" data-value="${meeting.replace(/"/g, '&quot;')}">${meeting}</div>`
+                ).join('');
+                
+                // Agregar eventos a los items
+                dropdown.querySelectorAll('.task-suggestion-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        input.value = this.getAttribute('data-value');
+                        dropdown.style.display = 'none';
+                        saveToCache();
+                    });
+                });
+            }
+
+            dropdown.style.display = 'block';
+        }
+
+        function hideMeetingSuggestions(input) {
+            const dropdown = input.parentElement.querySelector('.task-suggestions');
+            if (dropdown) {
+                setTimeout(() => {
+                    dropdown.style.display = 'none';
+                }, 200);
+            }
+        }
+
+        // Agregar eventos al input de nombre de reunión
+        function attachMeetingNameEvents(input) {
+            input.addEventListener('focus', function() {
+                showMeetingSuggestions(this);
+            });
+            
+            input.addEventListener('blur', function() {
+                hideMeetingSuggestions(this);
+            });
+            
+            input.addEventListener('input', function() {
+                const dropdown = this.parentElement.querySelector('.task-suggestions');
+                if (dropdown && dropdown.style.display === 'block') {
+                    const searchTerm = this.value.toLowerCase();
+                    const history = getMeetingHistory();
+                    const filtered = history.filter(meeting => 
+                        meeting.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    if (filtered.length === 0 && searchTerm !== '') {
+                        dropdown.innerHTML = '<div class="task-suggestion-empty">${translate('noMatches')}</div>';
+                    } else if (filtered.length > 0) {
+                        dropdown.innerHTML = filtered.map(meeting => 
+                            `<div class="task-suggestion-item" data-value="${meeting.replace(/"/g, '&quot;')}">${meeting}</div>`
+                        ).join('');
+                        
+                        dropdown.querySelectorAll('.task-suggestion-item').forEach(item => {
+                            item.addEventListener('click', function() {
+                                input.value = this.getAttribute('data-value');
+                                dropdown.style.display = 'none';
+                                saveToCache();
+                            });
+                        });
+                    }
+                }
+            });
+        }
+
+        // Crear y mostrar dropdown de sugerencias
+        function showTaskSuggestions(input) {
+            // Cerrar otros dropdowns abiertos
+            document.querySelectorAll('.task-suggestions').forEach(dropdown => {
+                dropdown.style.display = 'none';
+            });
+
+            let dropdown = input.parentElement.querySelector('.task-suggestions');
+            
+            if (!dropdown) {
+                dropdown = document.createElement('div');
+                dropdown.className = 'task-suggestions';
+                input.parentElement.appendChild(dropdown);
+            }
+
+            const history = getTaskHistory();
+            
+            if (history.length === 0) {
+                dropdown.innerHTML = `<div class="task-suggestion-empty">${translate('noRecentTasks')}</div>`;
+            } else {
+                dropdown.innerHTML = history.map(task => 
+                    `<div class="task-suggestion-item" data-value="${task.replace(/"/g, '&quot;')}">${task}</div>`
+                ).join('');
+                
+                // Agregar eventos a los items
+                dropdown.querySelectorAll('.task-suggestion-item').forEach(item => {
+                    item.addEventListener('click', function() {
+                        input.value = this.getAttribute('data-value');
+                        dropdown.style.display = 'none';
+                        saveToCache();
+                    });
+                });
+            }
+
+            dropdown.style.display = 'block';
+        }
+
+        function hideTaskSuggestions(input) {
+            const dropdown = input.parentElement.querySelector('.task-suggestions');
+            if (dropdown) {
+                setTimeout(() => {
+                    dropdown.style.display = 'none';
+                }, 200);
+            }
+        }
+
+        // Agregar eventos al input de descripción
+        function attachTaskDescriptionEvents(input) {
+            input.addEventListener('focus', function() {
+                showTaskSuggestions(this);
+            });
+            
+            input.addEventListener('blur', function() {
+                hideTaskSuggestions(this);
+            });
+            
+            input.addEventListener('input', function() {
+                const dropdown = this.parentElement.querySelector('.task-suggestions');
+                if (dropdown && dropdown.style.display === 'block') {
+                    const searchTerm = this.value.toLowerCase();
+                    const history = getTaskHistory();
+                    const filtered = history.filter(task => 
+                        task.toLowerCase().includes(searchTerm)
+                    );
+                    
+                    if (filtered.length === 0 && searchTerm !== '') {
+                        dropdown.innerHTML = '<div class="task-suggestion-empty">${translate('noMatches')}</div>';
+                    } else if (filtered.length > 0) {
+                        dropdown.innerHTML = filtered.map(task => 
+                            `<div class="task-suggestion-item" data-value="${task.replace(/"/g, '&quot;')}">${task}</div>`
+                        ).join('');
+                        
+                        dropdown.querySelectorAll('.task-suggestion-item').forEach(item => {
+                            item.addEventListener('click', function() {
+                                input.value = this.getAttribute('data-value');
+                                dropdown.style.display = 'none';
+                                saveToCache();
+                            });
+                        });
+                    }
+                }
+            });
+        }
+
+        // Funciones para manejar reuniones
+        function addMeeting() {
+            const meetingsContainer = document.getElementById('meetingsContainer');
+            const meetingEntry = document.createElement('div');
+            meetingEntry.className = 'meeting-entry';
+            meetingEntry.innerHTML = `
+                <div class="input-group">
+                    <label class="lang" data-en="Meeting name:" data-es="Nombre de la reunión:">Meeting name:</label>
+                    <input type="text" class="meeting-name" placeholder="Team Meeting" required>
+                </div>
+                <div class="input-group">
+                    <label class="lang" data-en="Start time (HH:MM):" data-es="Hora de inicio (HH:MM):">Start time (HH:MM):</label>
+                    <input type="text" class="meeting-time" placeholder="15:00" required pattern="[0-9]{1,2}:[0-9]{2}">
+                </div>
+                <div class="input-group">
+                    <label class="lang" data-en="Duration (HH:MM):" data-es="Duración (HH:MM):">Duration (HH:MM):</label>
+                    <input type="text" class="meeting-duration" placeholder="00:30" required pattern="[0-9]{1,2}:[0-9]{2}">
+                </div>
+                <button class="remove-task" onclick="removeMeeting(this)">${translate('removeButton')}</button>
+            `;
+            changeLanguage(currentLanguage); // Aplicar idioma actual
+            meetingsContainer.appendChild(meetingEntry);
+            
+            // Agregar eventos
+            attachMeetingEvents(meetingEntry);
+        }
+
+        function removeMeeting(button) {
+            const meetingsContainer = document.getElementById('meetingsContainer');
+            if (meetingsContainer.querySelectorAll('.meeting-entry').length > 1) {
+                button.parentElement.remove();
+                saveToCache();
+                updateHoursCounter();
+            } else {
+                alert(translate('atLeastOneMeeting'));
+            }
+        }
+
+        // Agregar eventos a una entrada de reunión
+        function attachMeetingEvents(meetingEntry) {
+            // Evento para nombre de reunión
+            const nameInput = meetingEntry.querySelector('.meeting-name');
+            attachMeetingNameEvents(nameInput);
+            nameInput.addEventListener('change', saveToCache);
+            
+            // Evento para hora
+            const timeInput = meetingEntry.querySelector('.meeting-time');
+            timeInput.addEventListener('blur', function() {
+                validateTimeInput(this);
+            });
+            timeInput.addEventListener('change', saveToCache);
+            
+            // Evento para duración
+            const durationInput = meetingEntry.querySelector('.meeting-duration');
+            durationInput.addEventListener('blur', function() {
+                validateDurationInput(this);
+                updateHoursCounter();
+            });
+            durationInput.addEventListener('change', () => {
+                saveToCache();
+                updateHoursCounter();
+            });
+            durationInput.addEventListener('input', debounce(() => {
+                updateHoursCounter();
+            }, 300));
+        }
+
+        // Validar y formatear input de hora
+        function validateTimeInput(input) {
+            let value = input.value.trim();
+            
+            // Si tiene formato HH:MM, asegurar que esté bien formateado
+            if (/^\d{1,2}:\d{1,2}$/.test(value)) {
+                const parts = value.split(':');
+                const hours = parseInt(parts[0]) % 24;
+                const minutes = parseInt(parts[1]) % 60;
+                input.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+            }
+        }
+
+        function addTask() {
+            const tasksContainer = document.getElementById('tasksContainer');
+            const taskEntry = document.createElement('div');
+            taskEntry.className = 'task-entry';
+            taskEntry.innerHTML = `
+                <div class="input-group">
+                    <label class="lang" data-en="Task description:" data-es="Descripción de la tarea:">Task description:</label>
+                    <input type="text" class="task-description" placeholder="Ex: API Development" required>
+                </div>
+                <div class="input-group">
+                    <label class="lang" data-en="Duration (HH:MM):" data-es="Duración (HH:MM):">Duration (HH:MM):</label>
+                    <input type="text" class="task-duration" placeholder="07:15" required pattern="[0-9]{1,2}:[0-9]{2}">
+                </div>
+                <button class="remove-task" onclick="removeTask(this)">${translate('removeButton')}</button>
+            `;
+            changeLanguage(currentLanguage); // Aplicar idioma actual
+            tasksContainer.appendChild(taskEntry);
+            
+            // Agregar eventos para guardar en caché
+            attachCacheEvents(taskEntry);
+            
+            // Agregar eventos de sugerencias al input de descripción
+            const descriptionInput = taskEntry.querySelector('.task-description');
+            attachTaskDescriptionEvents(descriptionInput);
+        }
+
+        function removeTask(button) {
+            button.parentElement.remove();
+            saveToCache();
+            updateHoursCounter();
+        }
+
+        // Agregar eventos para guardar en caché automáticamente
+        function attachCacheEvents(element = document) {
+            // Eventos para campos de tareas
+            element.querySelectorAll('.task-description').forEach(input => {
+                input.addEventListener('change', saveToCache);
+                input.addEventListener('input', debounce(saveToCache, 1000));
+            });
+            
+            element.querySelectorAll('.task-duration').forEach(input => {
+                input.addEventListener('blur', function() {
+                    validateDurationInput(this);
+                    updateHoursCounter();
+                });
+                input.addEventListener('change', () => {
+                    saveToCache();
+                    updateHoursCounter();
+                });
+                input.addEventListener('input', debounce(() => {
+                    updateHoursCounter();
+                }, 300));
+            });
+        }
+
+        // Debounce para evitar guardar demasiado frecuentemente
+        function debounce(func, wait) {
+            let timeout;
+            return function executedFunction(...args) {
+                const later = () => {
+                    clearTimeout(timeout);
+                    func(...args);
+                };
+                clearTimeout(timeout);
+                timeout = setTimeout(later, wait);
+            };
+        }
+
+        // Calcular y actualizar el total de horas
+        function updateHoursCounter() {
+            let meetingsTotal = 0;
+            document.querySelectorAll('.meeting-duration').forEach(input => {
+                meetingsTotal += durationToMinutes(input.value);
+            });
+            
+            let tasksTotal = 0;
+            document.querySelectorAll('.task-duration').forEach(input => {
+                tasksTotal += durationToMinutes(input.value);
+            });
+
+            const totalMinutes = meetingsTotal + tasksTotal;
+            const totalHours = Math.floor(totalMinutes / 60);
+            const remainingMinutes = totalMinutes % 60;
+            
+            const targetMinutes = 8 * 60; // 8 horas = 480 minutos
+            const difference = totalMinutes - targetMinutes;
+            
+            // Actualizar display
+            const hoursDisplay = document.getElementById('hoursDisplay');
+            const hoursMessage = document.getElementById('hoursMessage');
+            const hoursBreakdown = document.getElementById('hoursBreakdown');
+            const hoursCounter = document.getElementById('hoursCounter');
+            
+            hoursDisplay.textContent = `${totalHours}:${String(remainingMinutes).padStart(2, '0')}`;
+            
+            // Actualizar desglose con formato HH:MM
+            const meetingsFormatted = minutesToDuration(meetingsTotal);
+            const tasksFormatted = minutesToDuration(tasksTotal);
+            
+            hoursBreakdown.innerHTML = `
+                <div>${translate('meetings')}: ${meetingsFormatted} | ${translate('tasks')}: ${tasksFormatted}</div>
+                <div style="margin-top: 5px;">Total: ${totalMinutes} minutos (${(totalMinutes / 60).toFixed(2)} horas)</div>
+            `;
+            
+            // Actualizar estado y mensaje
+            hoursCounter.classList.remove('exact', 'less', 'more');
+            
+            if (totalMinutes === targetMinutes) {
+                hoursCounter.classList.add('exact');
+                hoursMessage.textContent = translate('perfect8hours');
+            } else if (totalMinutes < targetMinutes) {
+                hoursCounter.classList.add('less');
+                const missingMinutes = targetMinutes - totalMinutes;
+                const missingFormatted = minutesToDuration(missingMinutes);
+                hoursMessage.textContent = `${translate('missing')} ${missingFormatted} (${missingMinutes} min) ${translate('toComplete8hours')}`;
+            } else {
+                hoursCounter.classList.add('more');
+                const extraMinutes = totalMinutes - targetMinutes;
+                const extraFormatted = minutesToDuration(extraMinutes);
+                hoursMessage.textContent = `${translate('youHave')} ${extraFormatted} (${extraMinutes} min) ${translate('extra')} (${translate('total')}: ${(totalMinutes / 60).toFixed(2)}h)`;
+            }
+        }
+
+        // Agregar eventos a campos de configuración
+        document.addEventListener('DOMContentLoaded', () => {
+            document.getElementById('workStartTime').addEventListener('change', saveToCache);
+            
+            // Eventos para reuniones existentes
+            document.querySelectorAll('.meeting-entry').forEach(entry => {
+                attachMeetingEvents(entry);
+            });
+            
+            // Eventos para tareas existentes
+            attachCacheEvents();
+            
+            // Agregar eventos de sugerencias a todas las descripciones de tareas iniciales
+            document.querySelectorAll('.task-description').forEach(input => {
+                attachTaskDescriptionEvents(input);
+            });
+            
+            // Cerrar dropdowns al hacer clic fuera
+            document.addEventListener('click', function(e) {
+                if (!e.target.classList.contains('task-description') && !e.target.classList.contains('meeting-name')) {
+                    document.querySelectorAll('.task-suggestions').forEach(dropdown => {
+                        dropdown.style.display = 'none';
+                    });
+                }
+            });
+            
+            // Actualizar contador inicialmente
+            updateHoursCounter();
+        });
+
+        function parseTime(timeStr) {
+            const [hours, minutes] = timeStr.split(':').map(Number);
+            return { hours, minutes };
+        }
+
+        function formatTime(hours, minutes) {
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Convertir formato HH:MM a minutos totales
+        function durationToMinutes(durationStr) {
+            if (!durationStr) return 0;
+            const parts = durationStr.split(':');
+            if (parts.length !== 2) return 0;
+            const hours = parseInt(parts[0]) || 0;
+            const minutes = parseInt(parts[1]) || 0;
+            return hours * 60 + minutes;
+        }
+
+        // Convertir minutos a formato HH:MM
+        function minutesToDuration(totalMinutes) {
+            const hours = Math.floor(totalMinutes / 60);
+            const minutes = totalMinutes % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+        }
+
+        // Validar y formatear input de duración
+        function validateDurationInput(input) {
+            let value = input.value.trim();
+            
+            // Si el usuario ingresa solo números, convertir a formato HH:MM
+            if (/^\d+$/.test(value)) {
+                const minutes = parseInt(value);
+                input.value = minutesToDuration(minutes);
+                return;
+            }
+            
+            // Si ya tiene formato HH:MM, asegurar que esté bien formateado
+            if (/^\d{1,2}:\d{1,2}$/.test(value)) {
+                const parts = value.split(':');
+                const hours = parseInt(parts[0]);
+                const minutes = parseInt(parts[1]);
+                if (minutes > 59) {
+                    // Convertir minutos excesivos a horas
+                    const totalMinutes = hours * 60 + minutes;
+                    input.value = minutesToDuration(totalMinutes);
+                } else {
+                    input.value = `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+                }
+            }
+        }
+
+        function addMinutes(hours, minutes, minutesToAdd) {
+            let totalMinutes = hours * 60 + minutes + minutesToAdd;
+            return {
+                hours: Math.floor(totalMinutes / 60) % 24,
+                minutes: totalMinutes % 60
+            };
+        }
+
+        async function getUserInfo() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/user`, {
+                    headers: {
+                        'X-Api-Key': getApiKey()
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al obtener información del usuario. Verifica tu API key.');
+                }
+
+                const user = await response.json();
+                userId = user.id;
+                workspaceId = user.defaultWorkspace;
+                
+                return { userId, workspaceId };
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function loadProjects() {
+            try {
+                const response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/projects`, {
+                    headers: {
+                        'X-Api-Key': getApiKey()
+                    }
+                });
+
+                if (!response.ok) {
+                    throw new Error('Error al cargar proyectos.');
+                }
+
+                const projects = await response.json();
+                const projectSelect = document.getElementById('projectSelect');
+                
+                projectSelect.innerHTML = `<option value="">${translate('selectProject')}</option>`;
+                
+                projects.forEach(project => {
+                    const option = document.createElement('option');
+                    option.value = project.id;
+                    option.textContent = project.name;
+                    projectSelect.appendChild(option);
+                });
+
+                // Seleccionar proyecto por defecto
+                const defaultProjectId = getDefaultProjectId();
+                if (defaultProjectId) {
+                    projectSelect.value = defaultProjectId;
+                    selectedProjectId = defaultProjectId;
+                }
+
+                // Agregar evento para guardar el proyecto seleccionado
+                projectSelect.addEventListener('change', (e) => {
+                    selectedProjectId = e.target.value;
+                });
+                
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function createTimeEntry(description, startTime, endTime, date, projectId) {
+            // Crear fechas en zona horaria local
+            const [year, month, day] = date.split('-').map(Number);
+            const [startHours, startMinutes] = startTime.split(':').map(Number);
+            const [endHours, endMinutes] = endTime.split(':').map(Number);
+
+            const startDateTime = new Date(year, month - 1, day, startHours, startMinutes, 0, 0);
+            const endDateTime = new Date(year, month - 1, day, endHours, endMinutes, 0, 0);
+
+            const timeEntry = {
+                start: startDateTime.toISOString(),
+                end: endDateTime.toISOString(),
+                description: description,
+                projectId: projectId || null,
+                taskId: null,
+                billable: false
+            };
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/workspaces/${workspaceId}/time-entries`, {
+                    method: 'POST',
+                    headers: {
+                        'X-Api-Key': getApiKey(),
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(timeEntry)
+                });
+
+                if (!response.ok) {
+                    const errorData = await response.json();
+                    throw new Error(`Error al crear entrada: ${errorData.message || response.statusText}`);
+                }
+
+                return await response.json();
+            } catch (error) {
+                throw error;
+            }
+        }
+
+        async function generateSchedule() {
+            // Limpiar mensajes previos
+            document.getElementById('result').innerHTML = '';
+            document.getElementById('schedule').style.display = 'none';
+            
+            try {
+                // Validar que se haya seleccionado un proyecto
+                const projectId = document.getElementById('projectSelect').value;
+                if (!projectId) {
+                    throw new Error(translate('selectProject2'));
+                }
+
+                // Obtener valores del formulario
+                const workDate = document.getElementById('workDate').value;
+                if (!workDate) {
+                    throw new Error(translate('selectDate'));
+                }
+
+                // Validar horas totales
+                let meetingsTotal = 0;
+                document.querySelectorAll('.meeting-duration').forEach(input => {
+                    meetingsTotal += durationToMinutes(input.value);
+                });
+                
+                let tasksTotal = 0;
+                document.querySelectorAll('.task-duration').forEach(input => {
+                    tasksTotal += durationToMinutes(input.value);
+                });
+                
+                const totalMinutes = meetingsTotal + tasksTotal;
+                const targetMinutes = 8 * 60;
+                
+                if (totalMinutes !== targetMinutes) {
+                    const totalHours = (totalMinutes / 60).toFixed(2);
+                    const difference = totalMinutes - targetMinutes;
+                    const diffHours = Math.floor(Math.abs(difference) / 60);
+                    const diffMins = Math.abs(difference) % 60;
+                    
+                    let message;
+                    if (totalMinutes < targetMinutes) {
+                        message = `${translate('confirmWarning')} ${totalHours} ${translate('hoursRegistered')}\n${translate('missing2')} ${diffHours}h ${diffMins}min.${translate('continueAnyway')}`;
+                    } else {
+                        message = `${translate('confirmWarning')} ${totalHours} ${translate('hoursRegistered')}\n${translate('youHave')} ${diffHours}h ${diffMins}min ${translate('extra')}.${translate('continueAnyway')}`;
+                    }
+                    
+                    if (!confirm(message)) {
+                        return; // Cancelar si el usuario no confirma
+                    }
+                }
+
+                document.getElementById('loading').style.display = 'block';
+
+                const workStartTime = document.getElementById('workStartTime').value;
+
+                // Obtener todas las tareas adicionales
+                const taskDescriptions = Array.from(document.querySelectorAll('.task-description')).map(el => el.value);
+                const taskDurations = Array.from(document.querySelectorAll('.task-duration')).map(el => durationToMinutes(el.value));
+
+                // Validar que todas las tareas tengan descripción y duración
+                if (taskDescriptions.some(desc => !desc) || taskDurations.some(dur => !dur || isNaN(dur))) {
+                    throw new Error(translate('completeFields'));
+                }
+
+                // Obtener información del usuario de Clockify
+                await getUserInfo();
+
+                // Recopilar reuniones con sus horarios
+                const meetings = [];
+                document.querySelectorAll('.meeting-entry').forEach(entry => {
+                    const name = entry.querySelector('.meeting-name').value;
+                    const time = entry.querySelector('.meeting-time').value;
+                    const duration = durationToMinutes(entry.querySelector('.meeting-duration').value);
+                    if (name && time && duration) {
+                        const timeObj = parseTime(time);
+                        meetings.push({
+                            name,
+                            time: timeObj.hours * 60 + timeObj.minutes,
+                            duration,
+                            timeFormatted: time
+                        });
+                    }
+                });
+
+                // Ordenar reuniones por hora
+                meetings.sort((a, b) => a.time - b.time);
+
+                // Agregar almuerzo fijo
+                const lunchTime = 13 * 60; // 13:00
+                const lunchDuration = 60;
+                meetings.push({
+                    name: translate('lunch'),
+                    time: lunchTime,
+                    duration: lunchDuration,
+                    timeFormatted: '13:00',
+                    isBreak: true
+                });
+
+                // Re-ordenar con el almuerzo incluido
+                meetings.sort((a, b) => a.time - b.time);
+
+                // Construir el horario
+                const schedule = [];
+                let currentTime = parseTime(workStartTime);
+                let currentTimeMinutes = currentTime.hours * 60 + currentTime.minutes;
+                let taskIndex = 0;
+                const totalTasks = taskDescriptions.length;
+
+                // Distribuir tareas entre reuniones
+                for (const meeting of meetings) {
+                    // Llenar tiempo antes de la reunión con tareas
+                    while (currentTimeMinutes < meeting.time && taskIndex < totalTasks) {
+                        const availableTime = meeting.time - currentTimeMinutes;
+                        const duration = Math.min(taskDurations[taskIndex], availableTime);
+                        
+                        if (duration > 0) {
+                            const hours = Math.floor(currentTimeMinutes / 60);
+                            const minutes = currentTimeMinutes % 60;
+                            schedule.push({
+                                description: taskDescriptions[taskIndex],
+                                startTime: formatTime(hours, minutes),
+                                duration: duration
+                            });
+                            currentTimeMinutes += duration;
+                            taskDurations[taskIndex] -= duration;
+                        }
+                        
+                        if (taskDurations[taskIndex] <= 0) taskIndex++;
+                    }
+
+                    // Agregar la reunión
+                    const meetingHours = Math.floor(meeting.time / 60);
+                    const meetingMinutes = meeting.time % 60;
+                    schedule.push({
+                        description: meeting.name,
+                        startTime: formatTime(meetingHours, meetingMinutes),
+                        duration: meeting.duration,
+                        isBreak: meeting.isBreak || false
+                    });
+                    currentTimeMinutes = meeting.time + meeting.duration;
+                }
+
+                // Llenar el resto del día con tareas restantes
+                while (taskIndex < totalTasks) {
+                    const duration = taskDurations[taskIndex];
+                    if (duration > 0) {
+                        const hours = Math.floor(currentTimeMinutes / 60);
+                        const minutes = currentTimeMinutes % 60;
+                        schedule.push({
+                            description: taskDescriptions[taskIndex],
+                            startTime: formatTime(hours, minutes),
+                            duration: duration
+                        });
+                        currentTimeMinutes += duration;
+                    }
+                    taskIndex++;
+                }
+
+                // Mostrar el horario
+                displaySchedule(schedule, workDate);
+
+                // Subir a Clockify
+                let successCount = 0;
+                for (const item of schedule) {
+                    if (!item.isBreak) {
+                        const startTime = item.startTime;
+                        const endTimeObj = addMinutes(
+                            parseInt(startTime.split(':')[0]),
+                            parseInt(startTime.split(':')[1]),
+                            item.duration
+                        );
+                        const endTime = formatTime(endTimeObj.hours, endTimeObj.minutes);
+
+                        await createTimeEntry(item.description, startTime, endTime, workDate, projectId);
+                        successCount++;
+                        
+                        // Pequeña pausa entre peticiones
+                        await new Promise(resolve => setTimeout(resolve, 300));
+                    }
+                }
+
+                document.getElementById('loading').style.display = 'none';
+                
+                // Guardar descripciones de tareas en el historial
+                taskDescriptions.forEach(description => {
+                    if (description && description.trim()) {
+                        addToTaskHistory(description);
+                    }
+                });
+
+                // Guardar nombres de reuniones en el historial
+                document.querySelectorAll('.meeting-name').forEach(input => {
+                    const meetingName = input.value;
+                    if (meetingName && meetingName.trim()) {
+                        addToMeetingHistory(meetingName);
+                    }
+                });
+                
+                // Formatear fecha para mostrar
+                const dateObj = new Date(workDate + 'T00:00:00');
+                const dateFormatted = dateObj.toLocaleDateString('es-ES', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                
+                document.getElementById('result').innerHTML = `
+                    <div class="success">
+                        ${translate('successEntries')}${successCount}${translate('timeEntriesCreated')}<br>
+                        📅 <strong>${translate('date')}</strong> ${dateFormatted}<br>
+                        🔗 <a href="https://app.clockify.me/tracker" target="_blank" style="color: #155724; text-decoration: underline;">${translate('viewInClockify')}</a>
+                    </div>
+                `;
+
+            } catch (error) {
+                document.getElementById('loading').style.display = 'none';
+                document.getElementById('result').innerHTML = `
+                    <div class="error">
+                        ❌ Error: ${error.message}
+                    </div>
+                `;
+                console.error('Error:', error);
+            }
+        }
+
+        function displaySchedule(schedule, workDate) {
+            const scheduleDiv = document.getElementById('schedule');
+            const scheduleItems = document.getElementById('scheduleItems');
+            scheduleItems.innerHTML = '';
+
+            // Mostrar fecha del horario
+            if (workDate) {
+                const dateObj = new Date(workDate + 'T00:00:00');
+                const dateFormatted = dateObj.toLocaleDateString('es-ES', { 
+                    weekday: 'long', 
+                    year: 'numeric', 
+                    month: 'long', 
+                    day: 'numeric' 
+                });
+                const dateInfo = document.createElement('div');
+                dateInfo.style.cssText = 'background: #667eea; color: white; padding: 12px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold;';
+                dateInfo.innerHTML = `📅 Horario para: ${dateFormatted}`;
+                scheduleItems.appendChild(dateInfo);
+            }
+
+            schedule.forEach(item => {
+                const endTimeObj = addMinutes(
+                    parseInt(item.startTime.split(':')[0]),
+                    parseInt(item.startTime.split(':')[1]),
+                    item.duration
+                );
+                const endTime = formatTime(endTimeObj.hours, endTimeObj.minutes);
+
+                const itemDiv = document.createElement('div');
+                itemDiv.className = 'schedule-item';
+                itemDiv.style.borderLeftColor = item.isBreak ? '#ffc107' : '#667eea';
+                itemDiv.innerHTML = `
+                    <div class="schedule-time">${item.startTime} - ${endTime}</div>
+                    <div class="schedule-description">${item.description}</div>
+                    <div class="schedule-duration">${item.duration} min</div>
+                `;
+                scheduleItems.appendChild(itemDiv);
+            });
+
+            scheduleDiv.style.display = 'block';
+        }
+    </script>
+</body>
+</html>
+
